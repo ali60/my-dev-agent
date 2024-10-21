@@ -1,0 +1,14 @@
+opensearch-py
+sentence-transformers
+openai==0.28
+transformers
+javalang
+python-dotenv
+markdown
+beautifulsoup4
+pyperclip
+pynput
+boto3
+xdotool
+tox
+pytest
