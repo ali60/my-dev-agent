@@ -208,15 +208,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Sentence Transformers**: For efficient embeddings.
 - **Community Contributors**: Thanks for your valuable input and support.
 
-## Contact
-
-For questions or support, please open an issue or reach out via email:
-
-- **Email**: [your.email@example.com](mailto:your.email@example.com)
-- **GitHub Issues**: [Issue Tracker](https://github.com/yourusername/yourproject/issues)
-
-
-
 
 ## High level actions
 1. Review a PR

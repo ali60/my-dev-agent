@@ -106,4 +106,5 @@ class TitanInvoker(ModelInvoker):
             return None
 
     def process_response(self, response):
+
         return response["results"][0]["outputText"].strip()
