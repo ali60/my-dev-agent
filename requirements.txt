@@ -12,3 +12,5 @@ boto3
 xdotool
 tox
 pytest
+pytest-cov
+rich
