@@ -1,4 +1,4 @@
-# My AI Agent: Automating Developers' Everyday Tasks
+# My DEV Agent: Automating Developers' Everyday Tasks
 
 An intelligent assistant that streamlines and automates routine development tasks using a combination of scripts, Retrieval-Augmented Generation (RAG) with OpenSearch, and Large Language Models (LLMs) like OpenAI's GPT and Amazon Bedrock.
 
@@ -11,7 +11,6 @@ An intelligent assistant that streamlines and automates routine development task
 - [Installation](#installation)
 - [Usage](#usage)
   - [Text Processing and Code Generation](#text-processing-and-code-generation)
-  - [Task Automation](#task-automation)
 - [Configuration](#configuration)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
@@ -22,12 +21,14 @@ An intelligent assistant that streamlines and automates routine development task
 My AI Agent is designed to boost developer productivity by automating common tasks and providing intelligent assistance through:
 
 1. **Text and Code Processing**: Capture text/code from clipboard and generate summaries, critical responses, or code improvements
-4. **Flexible LLM Support**: Seamlessly switch between OpenAI and Amazon Bedrock models
+2. **AWS Integration**: Special tooling for AWS-related tasks like design reviews and security analysis
+3. **Flexible LLM Support**: Seamlessly switch between OpenAI and Amazon Bedrock models
 
 ## Key Features
 
 - **Smart Clipboard Integration**: Capture and process text directly from your clipboard
 - **Multiple Response Types**: Generate summaries, critical analyses, code rewrites, and unit tests
+- **AWS Workflow Support**: Tools for reviewing designs, handling CR comments, and security analysis
 - **Modular Architecture**: Easily extend with new capabilities and model integrations
 - **Configurable LLM Backend**: Use OpenAI GPT or Amazon Bedrock models based on your needs
 
@@ -37,7 +38,6 @@ The project follows a modular architecture with these key components:
 
 - **Models Layer**: Handles interactions with LLMs (OpenAI GPT, Amazon Bedrock)
 - **Service Layer**: Manages prompts, text processing, and clipboard interactions
-- **Tasks Layer**: Implements specific automation tasks and workflows
 - **Configuration Layer**: Centralizes settings and environment variables
 
 ## Prerequisites
@@ -85,7 +85,24 @@ The project follows a modular architecture with these key components:
 
 ### Text Processing and Code Generation
 
-Use the `capture.py` script to process text from your clipboard:
+The main entry point for the application is the `capture.py` script:
+
+```python
+from models.model_manager import ModelManager
+from service.prompt_manager import PromptManager
+from configuration.config import config
+
+
+if __name__ == "__main__":
+    try:
+        model_manager = ModelManager(config)
+        manager = PromptManager(config, model_manager=model_manager)
+        manager.run()
+    except KeyboardInterrupt:
+        print("\nExiting...")
+```
+
+To use the application:
 
 ```bash
 python capture.py
@@ -99,8 +116,6 @@ This will start an interactive session where you can:
 - Press 'uc' to generate unit tests
 - Press 'q' to quit
 
-```
-
 ## Configuration
 
 The application is configured through:
@@ -109,6 +124,20 @@ The application is configured through:
 2. **Configuration Files**: `configuration/config.json` for application settings
 3. **Model Configuration**: Settings for different LLM providers in the models directory
 
+## Project Structure
+
+```
+my-ai-agent/
+├── configuration/       # Configuration settings and environment handling
+├── models/              # LLM integration (OpenAI, Bedrock)
+├── service/             # Core services (prompt management, text processing)
+│   └── utils/           # Utility functions for services
+├── tests/               # Unit and integration tests
+├── .env                 # Environment variables (not in repo)
+├── capture.py           # Main clipboard capture utility
+├── requirements.txt     # Python dependencies
+└── README.md            # Project documentation
+```
 
 ## Contributing
 
