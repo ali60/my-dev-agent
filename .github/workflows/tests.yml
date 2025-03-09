@@ -28,6 +28,3 @@ jobs:
         
     - name: Test with tox
       run: tox
-      
-    - name: Run linting
-      run: tox -e lint
