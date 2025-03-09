@@ -1,78 +1,97 @@
+# service/prompt_manager.py
 import subprocess
+from service.text_processor import TextProcessor
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich import print as rprint
 import pyperclip
 import time
-from service.text_processor import TextProcessor
-from models.model_manager import ModelManager
+
+# service/prompt_manager.py
+from service.utils.clipboard_utils import ClipboardUtils
 
 
 class PromptManager:
-    def __init__(self, config):
+    def __init__(self, config, model_manager):
         self.config = config
-        self.model_manager = ModelManager(config)
-        self.text_processor = TextProcessor(model_manager=self.model_manager)
-       # Dictionary mapping user input to corresponding methods
+        self.model_manager = model_manager
+        self.text_processor = TextProcessor(model_manager)
+        self.console = Console()
         self.command_map = {
-            "s": self.text_processor.summarize_text,
-            "c": self.text_processor.generate_response,
-            "r": self.text_processor.reword_response,
-            "rc": self.text_processor.rewrite_code,
-            "uc": self.text_processor.unit_test_code,
+            "s": ("summarize", self.text_processor.summarize_text),
+            "c": ("critical response", self.text_processor.critical_response),
+            "r": ("response", self.text_processor.generate_response),
+            "rc": ("rewrite_code", self.text_processor.rewrite_code),
+            "uc": ("generate unit test", self.text_processor.generate_unit_test),
+            "lt": ("list typos", self.text_processor.list_typos),
+            "cr": ("code review", self.text_processor.code_review),
+            "sr": ("security review", self.text_processor.sec_review),
+            "n": ("null", self.text_processor.null),
         }
 
+    def get_command_options(self):
+        """Generate command options string from command_map"""
+        options = []
+        for key, value in self.command_map.items():
+            description, _ = value
+            options.append(f"[cyan]{key}[/cyan]:[yellow]{description}[/yellow]")
+        return "[" + ", ".join(options) + "]"
+
+    def display_markdown(self, text):
+        """Display text with Markdown formatting"""
+        try:
+            markdown = Markdown(text)
+            self.console.print(Panel(markdown, border_style="blue"))
+        except Exception as e:
+            rprint(f"[bold red]Error rendering markdown: {e}[/bold red]")
+            print(text)
+
     def get_selected_text(self):
-        # Check the OS from the config
-        os_type = self.config["os"]
+        """Get text from clipboard after user selects it"""
+        rprint(
+            "[bold yellow]Please select the text you want to process...[/bold yellow]"
+        )
 
-        if os_type == "linux":
-            # Simulate Ctrl+C on Linux using xdotool
-            subprocess.run(["xdotool", "key", "ctrl+c"])
-
-        elif os_type == "darwin":  # macOS
-            # Use AppleScript to simulate Ctrl+C on macOS
-            subprocess.run(
-                [
-                    "osascript",
-                    "-e",
-                    'tell application "System Events" to keystroke "c" using {command down}',
-                ]
-            )
-
-        elif os_type == "windows":
-            # On Windows, simulate Ctrl+C using the built-in 'clip' functionality (WSL might need adjustment)
-            subprocess.run(["powershell.exe", "Get-Clipboard"], stdout=subprocess.PIPE)
-
-        # Allow time for the clipboard to update
-        time.sleep(0.1)
-
-        # Get the clipboard content using pyperclip
-        selected_text = pyperclip.paste()
-
-        return selected_text
+        # Store initial clipboard content
+        return ClipboardUtils.paste_from_clipboard()
 
     def run(self):
-        print("Press 's' to capture and summarize the selected text, or 'q' to quit.")
+        rprint(
+            "[bold green]Press 's' to capture and summarize the selected text, or 'q' to quit.[/bold green]"
+        )
         while True:
-            user_input = input(
-                "[s:summarize, c: critical response, r: response, rc:rewrite_code, uc:generate unit test]  "
-            ).lower()
-            text = self.get_selected_text()
-            
+            command_options = self.get_command_options()
+            rprint(command_options)
+
+            user_input = input()
+            if user_input.lower() == "q":
+                rprint("[bold red]Exiting...[/bold red]")
+                break
+
+            text = (
+                self.get_selected_text()
+            )  # Using get_selected_text instead of get_clipboard_text
             if not text:
-                print("No text selected or clipboard is empty.")
+                rprint("[bold red]No text selected.[/bold red]")
                 continue
-            
-            response = self.process_input(user_input, text)
-            if response:
-                print(f"\n{response}")
-            else:
-                print("Failed to generate a summary or response.")
+
+            try:
+                response = self.process_input(user_input, text)
+                if response:
+                    self.display_markdown(response)
+                else:
+                    rprint(
+                        "[bold red]Failed to generate a summary or response.[/bold red]"
+                    )
+            except Exception as e:
+                rprint(f"[bold red]Error while processing input: {e}[/bold red]")
+                raise e
 
     def process_input(self, user_input, text):
-        # Look up the corresponding function in the command map
-        command_func = self.command_map.get(user_input)
-        
-        if command_func:
+        if user_input in self.command_map:
+            _, command_func = self.command_map[user_input]
             return command_func(text)
         else:
-            print("Invalid choice. Please try again.")
+            rprint("[bold red]Invalid choice. Please try again.[/bold red]")
             return None
