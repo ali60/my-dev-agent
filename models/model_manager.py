@@ -2,6 +2,7 @@ import boto3
 from botocore.config import Config
 from models.bedrock_models import ClaudeInvoker, LlamaInvoker, AmazonInvoker
 from models.gpt_models import ChatGPTModelInvoker
+from service.utils.spinner import spinning_cursor
 
 
 class ModelManager:
@@ -35,8 +36,11 @@ class ModelManager:
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
         }
-        print("invoke model, waiting for response..")
-        response = model.invoke(prompt, payload)
+        
+        # Use the spinning cursor while waiting for the model response
+        with spinning_cursor(f"Invoking {self.default_model} model", spinner_type="moon"):
+            response = model.invoke(prompt, payload)
+            
         if response is None:
             return "Error while invoking the model"
         return model.process_response(response)
