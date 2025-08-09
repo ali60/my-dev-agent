@@ -1,91 +1,70 @@
-# utils/clipboard_utils.py
-import platform
+# service/utils/clipboard_utils.py
 import subprocess
+import platform
+import time
 import pyperclip
-from rich import print as rprint
 
 
 class ClipboardUtils:
+    """Utility class for clipboard operations"""
+    
     @staticmethod
-    def copy_to_clipboard(text):
+    def get_selected_text():
         """
-        Copy text to clipboard based on platform
+        Capture selected text by simulating Ctrl+C and then reading from clipboard
         """
-        try:
-            system = platform.system()
+        os_type = platform.system().lower()
 
-            if system == "Darwin":  # macOS
-                try:
-                    process = subprocess.Popen(
-                        "pbcopy", env={"LANG": "en_US.UTF-8"}, stdin=subprocess.PIPE
-                    )
-                    process.communicate(text.encode("utf-8"))
-                    return True
-                except Exception as e:
-                    rprint(f"[red]Error using pbcopy: {e}[/red]")
-                    return False
+        if os_type == "linux":
+            # Use xdotool to simulate Ctrl+C on Linux
+            subprocess.run(["xdotool", "key", "ctrl+c"])
 
-            elif system == "Linux":
-                try:
-                    process = subprocess.Popen(
-                        ["xclip", "-selection", "clipboard"], stdin=subprocess.PIPE
-                    )
-                    process.communicate(text.encode("utf-8"))
-                    return True
-                except Exception as e:
-                    rprint(f"[red]Error using xclip: {e}[/red]")
-                    return False
+        elif os_type == "darwin":  # macOS
+            # Use AppleScript to simulate Cmd+C on macOS
+            subprocess.run(
+                [
+                    "osascript",
+                    "-e",
+                    'tell application "System Events" to keystroke "c" using {command down}',
+                ]
+            )
 
-            else:  # Windows and fallback
-                try:
-                    pyperclip.copy(text)
-                    return True
-                except Exception as e:
-                    rprint(f"[red]Error using pyperclip: {e}[/red]")
-                    return False
+        elif os_type == "windows":
+            # On Windows, simulate Ctrl+C using the built-in 'clip' functionality
+            subprocess.run(["powershell.exe", "Get-Clipboard"], stdout=subprocess.PIPE)
 
-        except Exception as e:
-            rprint(f"[red]Error copying to clipboard: {e}[/red]")
-            return False
+        # Allow time for the clipboard to update
+        time.sleep(0.1)
 
+        # Get the clipboard content using pyperclip
+        selected_text = pyperclip.paste()
+
+        return selected_text
+    
+    @staticmethod
+    def set_clipboard_text(text):
+        """
+        Set text to clipboard
+        """
+        pyperclip.copy(text)
+    
+    @staticmethod
+    def get_clipboard_text():
+        """
+        Get text from clipboard without simulating key press
+        """
+        return pyperclip.paste()
+    
     @staticmethod
     def paste_from_clipboard():
         """
-        Paste text from clipboard based on platform
+        Alias for get_selected_text() for compatibility
         """
-        try:
-            system = platform.system()
-
-            if system == "Darwin":  # macOS
-                try:
-                    process = subprocess.Popen(
-                        "pbpaste", stdout=subprocess.PIPE, env={"LANG": "en_US.UTF-8"}
-                    )
-                    output, _ = process.communicate()
-                    return output.decode("utf-8")
-                except Exception as e:
-                    rprint(f"[red]Error using pbpaste: {e}[/red]")
-                    return None
-
-            elif system == "Linux":
-                try:
-                    process = subprocess.Popen(
-                        ["xclip", "-selection", "clipboard", "-o"],
-                        stdout=subprocess.PIPE,
-                    )
-                    output, _ = process.communicate()
-                    return output.decode("utf-8")
-                except Exception as e:
-                    rprint(f"[red]Error using xclip: {e}[/red]")
-                    return None
-
-            else:  # Windows and fallback
-                try:
-                    return pyperclip.paste()
-                except Exception as e:
-                    rprint(f"[red]Error using pyperclip: {e}[/red]")
-                    return None
-
-        except Exception as e:
-            rprint(f"[red]Error pasting from clipboard: {e}[/red]")
-            return None
+        return ClipboardUtils.get_selected_text()
+    
+    @staticmethod
+    def copy_to_clipboard(text):
+        """
+        Copy text to clipboard (alias for set_clipboard_text)
+        """
+        return ClipboardUtils.set_clipboard_text(text)

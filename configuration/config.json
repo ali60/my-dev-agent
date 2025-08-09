@@ -4,15 +4,15 @@
     "profile": "default",
     "default_model": "claude",
     "claude": {
-        "modelId": "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+        "modelId": "us.anthropic.claude-sonnet-4-20250514-v1:0",
         "prompt_format": "\n\nHuman: {prompt}\n\nAssistant:",
-        "max_tokens": 131072,
+        "max_tokens": 65000,
         "temperature": 0.7,
         "top_p": 1,
         "stop_sequences": ["\n\nHuman:"]
     },
     "llama": {
-        "modelId": "us.meta.llama3-3-70b-instruct-v1:0",
+        "modelId": "us.meta.llama4-scout-17b-instruct-v1:0",
         "prompt_format": "[INST] {prompt} [/INST]",
         "max_tokens": 8192,
         "temperature": 0.7,
@@ -26,7 +26,7 @@
         "top_p": 1
     },
     "nova": {
-        "modelId": "us.amazon.nova-pro-v1:0",
+        "modelId": "eu.amazon.nova-lite-v1:0",
         "prompt_format": "{prompt}",
         "max_tokens": 200000,
         "temperature": 0.7,

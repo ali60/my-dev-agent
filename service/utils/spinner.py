@@ -1,94 +1,68 @@
 import sys
 import time
 import threading
-import itertools
 from contextlib import contextmanager
 
+
 class Spinner:
-    """
-    A class that provides animated spinners to indicate processing or waiting.
-    """
+    """A simple spinner class for showing progress"""
     
-    def __init__(self, message="Processing", delay=0.1, spinner_type="dots"):
-        """
-        Initialize the spinner.
-        
-        Args:
-            message (str): The message to display alongside the spinner
-            delay (float): Time between spinner updates in seconds
-            spinner_type (str): Type of spinner animation to use
-        """
+    SPINNERS = {
+        'default': ['|', '/', '-', '\\'],
+        'dots': ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+        'moon': ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'],
+        'clock': ['🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛'],
+        'arrow': ['←', '↖', '↑', '↗', '→', '↘', '↓', '↙'],
+        'bounce': ['⠁', '⠂', '⠄', '⠂'],
+    }
+    
+    def __init__(self, message="Loading", spinner_type="default", delay=0.1):
         self.message = message
+        self.spinner_chars = self.SPINNERS.get(spinner_type, self.SPINNERS['default'])
         self.delay = delay
         self.running = False
-        self.spinner_thread = None
-        
-        # Different spinner animation styles
-        self.spinners = {
-            "dots": ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
-            "line": ["-", "\\", "|", "/"],
-            "dots_simple": [".", "..", "..."],
-            "arrow": ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"],
-            "pulse": ["█", "▓", "▒", "░"],
-            "bounce": ["⠁", "⠂", "⠄", "⠂"],
-            "clock": ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"],
-            "moon": ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"],
-            "hearts": ["💖", "💗", "💓", "💞", "💕"],
-            "stars": ["✶", "✸", "✹", "✺", "✹", "✷"],
-        }
-        
-        self.spinner_chars = self.spinners.get(spinner_type, self.spinners["dots"])
+        self.thread = None
     
-    def spin(self):
-        """The animation function that runs in a separate thread."""
-        spinner_cycle = itertools.cycle(self.spinner_chars)
+    def _spin(self):
+        """Internal method to handle the spinning animation"""
+        idx = 0
         while self.running:
-            sys.stdout.write(f"\r{next(spinner_cycle)} {self.message}")
+            char = self.spinner_chars[idx % len(self.spinner_chars)]
+            sys.stdout.write(f'\r{char} {self.message}')
             sys.stdout.flush()
             time.sleep(self.delay)
-            sys.stdout.write("\r\033[K")  # Clear the line
+            idx += 1
     
     def start(self):
-        """Start the spinner animation."""
-        self.running = True
-        self.spinner_thread = threading.Thread(target=self.spin)
-        self.spinner_thread.daemon = True
-        self.spinner_thread.start()
+        """Start the spinner"""
+        if not self.running:
+            self.running = True
+            self.thread = threading.Thread(target=self._spin)
+            self.thread.daemon = True
+            self.thread.start()
     
     def stop(self):
-        """Stop the spinner animation."""
-        self.running = False
-        if self.spinner_thread:
-            self.spinner_thread.join()
-        sys.stdout.write("\r\033[K")  # Clear the line
-        sys.stdout.flush()
+        """Stop the spinner"""
+        if self.running:
+            self.running = False
+            if self.thread:
+                self.thread.join()
+            sys.stdout.write('\r' + ' ' * (len(self.message) + 10) + '\r')
+            sys.stdout.flush()
 
 
 @contextmanager
-def spinning_cursor(message="Processing", spinner_type="dots"):
-    """
-    Context manager for using the spinner.
-    
-    Example:
-        with spinning_cursor("Loading data..."):
-            # Do some time-consuming operation
-            time.sleep(5)
-    """
-    spinner = Spinner(message=message, spinner_type=spinner_type)
-    spinner.start()
+def spinning_cursor(message="Loading", spinner_type="default", delay=0.1):
+    """Context manager for showing a spinner"""
+    spinner = Spinner(message, spinner_type, delay)
     try:
-        yield
+        spinner.start()
+        yield spinner
     finally:
         spinner.stop()
 
 
-# Example usage if run directly
-if __name__ == "__main__":
-    print("Testing spinner animations:")
-    
-    for spinner_type in ["dots", "line", "dots_simple", "arrow", "pulse"]:
-        print(f"\nTesting {spinner_type} spinner:")
-        with spinning_cursor(f"Testing {spinner_type} spinner", spinner_type=spinner_type):
-            time.sleep(3)
-    
-    print("\nAll spinner tests completed!")
+def show_spinner(message="Loading", duration=2, spinner_type="default"):
+    """Show a spinner for a specific duration"""
+    with spinning_cursor(message, spinner_type):
+        time.sleep(duration)
